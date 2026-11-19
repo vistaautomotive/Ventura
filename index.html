@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventura – 3D-model</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+  :root { --bg:#f3f4f6; --fg:#1f2937; --muted:#6b7280; --accent:#0b5cad; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--fg); }
+  .wrap { display:flex; flex-direction:column; height:100%; }
+  header { padding:12px 16px 4px; }
+  h1 { font-size:1.15rem; margin:0; }
+  header p { margin:2px 0 0; color:var(--muted); font-size:.9rem; }
+  model-viewer { flex:1; width:100%; min-height:320px; background:linear-gradient(#eef1f5,#d9dee5); --poster-color:transparent; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; padding:10px 16px 14px; align-items:center; }
+  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid #c7ccd4; background:#fff; color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button:focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+  .hint { color:var(--muted); font-size:.85rem; margin-left:auto; }
+  #ar { position:absolute; right:12px; bottom:12px; }
+  .progress { position:absolute; left:0; right:0; top:0; height:4px; background:transparent; }
+  .progress > div { height:100%; width:0; background:var(--accent); transition:width .2s; }
+  .loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ventura – hoogdekker</h1>
+    <p>Sleep om te draaien, scroll of knijp om te zoomen.</p>
+  </header>
+
+  <model-viewer id="mv"
+    src="Ventura.glb"
+    ios-src="Ventura_AR.usdz"
+    alt="3D-model van een hoogdekker met draaiende neuspropeller"
+    camera-controls touch-action="pan-y"
+    autoplay animation-name="Vlucht"
+    shadow-intensity="0.8" shadow-softness="0.8"
+    exposure="1.05" environment-image="neutral"
+    camera-orbit="35deg 70deg 2.4m" min-camera-orbit="auto auto 0.6m" max-camera-orbit="auto auto 5m"
+    ar ar-modes="quick-look webxr scene-viewer" ar-scale="auto">
+    <div class="progress" slot="progress-bar"><div id="pb"></div></div>
+    <div class="loading" id="loading">Model laden…</div>
+    <button slot="ar-button" id="ar" class="primary">Bekijk in AR</button>
+  </model-viewer>
+
+  <div class="bar">
+    <button id="play" class="primary" aria-pressed="true">Pauze</button>
+    <button id="spin" aria-pressed="false">Automatisch draaien</button>
+    <button id="reset">Beginaanzicht</button>
+    <span class="hint">AR-knop verschijnt op iPad/iPhone en Android</span>
+  </div>
+</div>
+
+<script>
+  const mv = document.getElementById('mv');
+  const play = document.getElementById('play');
+  const spin = document.getElementById('spin');
+  const pb = document.getElementById('pb');
+
+  mv.addEventListener('progress', e => {
+    pb.style.width = (e.detail.totalProgress * 100) + '%';
+    if (e.detail.totalProgress >= 1) { pb.parentElement.style.opacity = 0; }
+  });
+  mv.addEventListener('load', () => {
+    document.getElementById('loading').remove();
+    // gebruik de eerste beschikbare animatie
+    const names = mv.availableAnimations || [];
+    if (names.length) { mv.animationName = names[0]; mv.play(); }
+  });
+  mv.addEventListener('error', () => {
+    document.getElementById('loading').textContent = 'Het model kon niet worden geladen.';
+  });
+
+  play.addEventListener('click', () => {
+    if (mv.paused) { mv.play(); play.textContent = 'Pauze'; play.setAttribute('aria-pressed','true'); }
+    else { mv.pause(); play.textContent = 'Afspelen'; play.setAttribute('aria-pressed','false'); }
+  });
+  spin.addEventListener('click', () => {
+    const on = !mv.hasAttribute('auto-rotate');
+    mv.toggleAttribute('auto-rotate', on);
+    spin.setAttribute('aria-pressed', String(on));
+    spin.classList.toggle('primary', on);
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    mv.cameraOrbit = '35deg 70deg 2.4m';
+    mv.cameraTarget = 'auto auto auto';
+  });
+</script>
+</body>
+</html>
